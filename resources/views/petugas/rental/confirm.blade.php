@@ -42,73 +42,76 @@
                 </div>
             </div>
 
-            {{-- UNIT --}}
+            {{-- UNIT LIST --}}
             <div class="bg-gray-700 rounded-lg p-5">
                 <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2">
                     Detail Unit
                 </h3>
 
-                <div class="space-y-2 text-sm">
+                <div class="space-y-4 text-sm">
 
-                    <p>
-                        <span class="font-semibold text-white">
-                            {{ $unit->name }}
-                        </span>
-                        <span class="text-gray-400">({{ $unit->type }})</span>
-                    </p>
+                    @foreach($items as $item)
+                    <div class="bg-gray-800 p-4 rounded-lg">
 
-                    <p class="text-gray-400 text-xs">
-                        Kode: {{ $unit->code }}
-                    </p>
-
-                    <p>
-                        <span class="px-2 py-1 text-xs rounded bg-green-600/20 text-green-400">
-                            {{ $unit->condition }}
-                        </span>
-                    </p>
-
-                    <p>
-                        Harga / Hari:<br>
-                        <span class="text-green-400 font-semibold">
-                            Rp {{ number_format($unit->price_per_day, 0, ',', '.') }}
-                        </span>
-                    </p>
-
-                    {{-- DISPLAY ONLY --}}
-                    <div class="grid grid-cols-2 gap-3 mt-4">
-
-                        <div class="bg-gray-800 rounded p-4 text-center">
-                            <div class="text-xs text-gray-400">Jumlah</div>
-                            <div class="text-xl font-bold">
-                                {{ $validated['quantity'] }}
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-semibold text-white">
+                                    {{ $item['name'] }}
+                                </p>
+                                <p class="text-xs text-gray-400">
+                                    {{ $item['type'] }} • {{ $item['condition'] }}
+                                </p>
                             </div>
+
+                            <span class="text-green-400 font-semibold">
+                                Rp {{ number_format($item['price_per_day'], 0, ',', '.') }}/hari
+                            </span>
                         </div>
 
-                        <div class="bg-gray-800 rounded p-4 text-center">
-                        <div class="text-xs text-gray-400">Durasi</div>
-                        <div class="text-xl font-bold">
-                            {{ $validated['duration_days'] }} hari
+                        <div class="grid grid-cols-2 gap-3 mt-4 text-center">
+
+                            <div class="bg-gray-700 rounded p-3">
+                                <div class="text-xs text-gray-400">Jumlah</div>
+                                <div class="text-lg font-bold">
+                                    {{ $item['quantity'] }}
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-700 rounded p-3">
+                                <div class="text-xs text-gray-400">Durasi</div>
+                                <div class="text-lg font-bold">
+                                    {{ $item['duration_days'] }} hari
+                                </div>
+                            </div>
+
                         </div>
-                    </div>
 
-                    <div class="mt-4 text-sm">
-                    <span class="text-gray-400">Tanggal Sewa:</span><br>
-                    <span class="text-white font-semibold">
-                        {{ $rentalDate->format('d F Y, H:i') }}
-                    </span>
-                </div>
+                        <div class="text-right mt-3 text-blue-400 font-bold">
+                            Rp {{ number_format($item['subtotal'], 0, ',', '.') }}
+                        </div>
 
                     </div>
-
-                    {{-- ESTIMASI --}}
-                    <div class="mt-2 text-sm">
-                    <span class="text-gray-400">Estimasi Kembali:</span><br>
-                    <span class="text-blue-400 font-semibold">
-                        {{ $returnDate->format('d F Y, H:i') }}
-                    </span>
-                </div>
+                    @endforeach
 
                 </div>
+
+                {{-- TANGGAL --}}
+                <div class="mt-6 text-sm">
+                    <p>
+                        <span class="text-gray-400">Tanggal Sewa:</span><br>
+                        <span class="text-white font-semibold">
+                            {{ $rentalDate->format('d F Y, H:i') }}
+                        </span>
+                    </p>
+
+                    <p class="mt-3">
+                        <span class="text-gray-400">Estimasi Kembali:</span><br>
+                        <span class="text-blue-400 font-semibold">
+                            {{ $returnDate->format('d F Y, H:i') }}
+                        </span>
+                    </p>
+                </div>
+
             </div>
 
         </div>
@@ -119,6 +122,11 @@
             <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2">
                 Ringkasan Pembayaran
             </h3>
+
+            <div class="flex justify-between text-sm mb-2">
+                <span class="text-gray-400">Total Unit</span>
+                <span>{{ $rentalDetails['total_quantity'] }}</span>
+            </div>
 
             <div class="flex justify-between text-sm mb-2">
                 <span class="text-gray-400">Subtotal</span>

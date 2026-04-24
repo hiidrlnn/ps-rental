@@ -5,7 +5,7 @@
 
 @section('content')
 
-<div class="max-w-2xl mx-auto">
+<div class="max-w-3xl mx-auto">
 
     <div class="bg-gray-800 shadow-xl rounded-xl p-8 text-gray-100">
 
@@ -17,16 +17,44 @@
         <div class="bg-gray-700 rounded-lg p-5 mb-6">
 
             <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2">
-                Detail Pembayaran
+                Detail Penyewaan
             </h3>
 
-            <div class="space-y-2 text-sm">
-                <p><span class="text-gray-400">Pelanggan</span><br>{{ $customer->name }}</p>
-                <p><span class="text-gray-400">Unit</span><br>{{ $unit->name }} ({{ $unit->type }}) - {{ $rentalDetails['quantity'] }} unit</p>
-                <p><span class="text-gray-400">Durasi</span><br>{{ $rentalDetails['duration_days'] }} hari</p>
+            <div class="text-sm mb-4">
+                <p class="text-gray-400">Pelanggan</p>
+                <p class="font-semibold">{{ $customer->name }}</p>
             </div>
 
-            <div class="mt-4 text-right">
+            {{-- LIST UNIT --}}
+            <div class="space-y-3">
+
+                @foreach($items as $item)
+                <div class="bg-gray-800 rounded p-4">
+
+                    <div class="flex justify-between text-sm">
+                        <div>
+                            <p class="font-semibold text-white">
+                                {{ $item['name'] }} ({{ $item['type'] }})
+                            </p>
+                            <p class="text-gray-400 text-xs">
+                                {{ $item['quantity'] }} unit • {{ $item['duration_days'] }} hari
+                            </p>
+                        </div>
+
+                        <div class="text-right">
+                            <p class="text-green-400 font-semibold">
+                                Rp {{ number_format($item['subtotal'], 0, ',', '.') }}
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+                @endforeach
+
+            </div>
+
+            {{-- TOTAL --}}
+            <div class="mt-5 text-right border-t border-gray-600 pt-4">
                 <span class="text-gray-400 text-sm">Total</span><br>
                 <span class="text-2xl font-bold text-green-400">
                     Rp {{ number_format($rentalDetails['total_price'], 0, ',', '.') }}
@@ -114,7 +142,7 @@ const change = document.getElementById('change_amount');
 
 const total = {{ $rentalDetails['total_price'] }};
 
-// ================= TOGGLE =================
+// TOGGLE
 function toggle() {
     if (manual.checked) {
         manualInput.style.display = 'block';
@@ -125,46 +153,40 @@ function toggle() {
     }
 }
 
-// ================= FORMAT RUPIAH =================
+// FORMAT
 function formatRupiah(angka) {
     return 'Rp ' + angka.toLocaleString('id-ID');
 }
 
-// ================= INPUT ONLY NUMBER =================
+// INPUT
 input.addEventListener('input', function () {
 
-    // hapus semua selain angka
     let value = this.value.replace(/[^0-9]/g, '');
-
     let number = parseInt(value || 0);
 
-    // simpan raw
     rawInput.value = number;
-
-    // tampilkan format
     this.value = number ? number.toLocaleString('id-ID') : '';
 
-    // hitung kembalian
     let kembali = number - total;
     if (kembali < 0) kembali = 0;
 
     change.value = formatRupiah(kembali);
 });
 
-// ================= VALIDASI =================
+// VALIDASI
 document.getElementById('paymentForm').addEventListener('submit', function (e) {
 
     if (manual.checked) {
         let bayar = parseInt(rawInput.value || 0);
 
+        if (bayar <= 0) {
+            e.preventDefault();
+            alert('Masukkan nominal bayar');
+        }
+
         if (bayar < total) {
             e.preventDefault();
             alert('Uang tidak cukup');
-        }
-
-        if (bayar <= 0) {
-            e.preventDefault();
-            alert('Masukkan nominal bayar yang valid');
         }
     }
 });

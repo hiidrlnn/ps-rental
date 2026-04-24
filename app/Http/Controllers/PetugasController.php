@@ -136,10 +136,12 @@ public function confirmRental(Request $request)
     // =========================
     // VALIDASI INPUT
     // =========================
-    $validated = $request->validate([
-        'unit_id' => 'required|exists:units,id',
-        'quantity' => 'required|integer|min:1|max:10',
-        'duration_days' => 'required|integer|min:1|max:30',
+    $request->validate([
+        'unit_ids' => 'required|array|min:1',
+        'unit_ids.*' => 'exists:units,id',
+
+        'quantities' => 'required|array',
+        'durations' => 'required|array',
     ]);
 
     // =========================
@@ -157,37 +159,81 @@ public function confirmRental(Request $request)
     // AMBIL DATA DB
     // =========================
     $customer = Customer::findOrFail($customer_id);
-    $unit = Unit::findOrFail($validated['unit_id']);
+
+    $unit_ids = $request->unit_ids;
+    $quantities = $request->quantities;
+    $durations = $request->durations;
+
+    $units = Unit::whereIn('id', $unit_ids)->get();
+
+    // =========================
+    // VALIDASI TOTAL QTY (MAX 10)
+    // =========================
+    $totalQty = 0;
+
+    foreach ($unit_ids as $unit_id) {
+        $qty = (int) ($quantities[$unit_id] ?? 0);
+        $totalQty += $qty;
+    }
+
+    if ($totalQty > 10) {
+        return back()->withErrors('Total unit maksimal 10')->withInput();
+    }
 
     // =========================
     // HITUNG HARGA
     // =========================
-    $subtotal_price = $unit->price_per_day * $validated['quantity'];
-    $total_price = $subtotal_price * $validated['duration_days'];
+    $items = [];
+    $subtotal_price = 0;
+
+    foreach ($units as $unit) {
+
+        $qty = (int) ($quantities[$unit->id] ?? 1);
+        $duration = (int) ($durations[$unit->id] ?? 1);
+
+        // VALIDASI PER ITEM
+        if ($qty < 1 || $qty > 10) continue;
+        if ($duration < 1 || $duration > 30) continue;
+
+        $price = $unit->price_per_day * $qty * $duration;
+
+        $subtotal_price += $price;
+
+        $items[] = [
+            'unit_id' => $unit->id,
+            'name' => $unit->name,
+            'type' => $unit->type,
+            'condition' => $unit->condition,
+            'price_per_day' => $unit->price_per_day,
+            'quantity' => $qty,
+            'duration_days' => $duration,
+            'subtotal' => $price
+        ];
+    }
 
     // =========================
     // HITUNG TANGGAL
     // =========================
     $rentalDate = \Carbon\Carbon::parse($rentalDatetime);
-    $returnDate = $rentalDate->copy()->addDays($validated['duration_days']);
+
+    // ambil durasi TERPANJANG untuk estimasi kembali
+    $maxDuration = collect($items)->max('duration_days') ?? 1;
+
+    $returnDate = $rentalDate->copy()->addDays($maxDuration);
 
     // =========================
     // SIMPAN KE SESSION
     // =========================
     session()->put('rental_details', [
         'customer_id' => $customer->id,
-        'unit_id' => $unit->id,
-        'quantity' => $validated['quantity'],
-        'duration_days' => $validated['duration_days'],
+        'items' => $items,
+        'total_quantity' => $totalQty,
         'subtotal_price' => $subtotal_price,
-        'total_price' => $total_price,
+        'total_price' => $subtotal_price,
         'rental_datetime' => $rentalDatetime,
         'return_datetime' => $returnDate->toDateTimeString(),
     ]);
 
-    // =========================
-    // AMBIL LAGI (BIAR CONSISTENT)
-    // =========================
     $rentalDetails = session('rental_details');
 
     // =========================
@@ -195,8 +241,7 @@ public function confirmRental(Request $request)
     // =========================
     return view('petugas.rental.confirm', compact(
         'customer',
-        'unit',
-        'validated',
+        'items',
         'rentalDetails',
         'rentalDate',
         'returnDate'
@@ -207,94 +252,148 @@ public function showPaymentForm()
 {
     $rentalDetails = session('rental_details');
 
-    if (!$rentalDetails) {
-        return redirect()->route('petugas.rental.form');
+    // =========================
+    // VALIDASI SESSION
+    // =========================
+    if (!$rentalDetails || !isset($rentalDetails['items'])) {
+        return redirect()->route('petugas.rental.form')
+            ->with('error', 'Data rental tidak ditemukan');
     }
 
+    // =========================
+    // AMBIL DATA CUSTOMER
+    // =========================
     $customer = Customer::findOrFail($rentalDetails['customer_id']);
-    $unit = Unit::findOrFail($rentalDetails['unit_id']);
 
-    return view('petugas.rental.payment', compact('rentalDetails', 'customer', 'unit'));
+    // =========================
+    // AMBIL ITEMS (MULTI UNIT)
+    // =========================
+    $items = $rentalDetails['items'];
+
+    // =========================
+    // OPTIONAL: FORMAT ULANG (BIAR AMAN)
+    // =========================
+    $items = collect($items)->map(function ($item) {
+        return [
+            'unit_id' => $item['unit_id'],
+            'name' => $item['name'],
+            'type' => $item['type'],
+            'price_per_day' => $item['price_per_day'],
+            'quantity' => $item['quantity'],
+            'duration_days' => $item['duration_days'],
+            'subtotal' => $item['subtotal'],
+        ];
+    });
+
+    // =========================
+    // RETURN VIEW
+    // =========================
+    return view('petugas.rental.payment', compact(
+        'rentalDetails',
+        'customer',
+        'items'
+    ));
 }
 
     // =========================
     // 🔥 PROCESS PAYMENT
     // =========================
-    public function processPayment(Request $request)
-    {
-        $request->validate([
-            'payment_method' => 'required|in:manual,xendit',
-            'amount_paid' => 'nullable|numeric|min:0'
-        ]);
+public function processPayment(Request $request)
+{
+    $request->validate([
+        'payment_method' => 'required|in:manual,xendit',
+        'amount_paid' => 'nullable|numeric|min:0'
+    ]);
 
-        $data = session('rental_details');
+    $data = session('rental_details');
 
-        if (!$data) {
-            return back()->withErrors('Session hilang');
-        }
+    if (!$data || !isset($data['items'])) {
+        return back()->withErrors('Session hilang atau data tidak valid');
+    }
 
-        DB::beginTransaction();
+    DB::beginTransaction();
 
-        try {
-            $unit = Unit::findOrFail($data['unit_id']);
+    try {
 
-            // 🔥 CREATE RENTAL
+        $rentals = [];
+
+        // =========================
+        // 🔥 LOOP SEMUA ITEM
+        // =========================
+        foreach ($data['items'] as $item) {
+
+            $unit = Unit::findOrFail($item['unit_id']);
+
+            // CREATE RENTAL PER ITEM
             $rental = Rental::create([
                 'customer_id' => $data['customer_id'],
                 'unit_id' => $unit->id,
-                'quantity' => $data['quantity'],
-                'duration_days' => $data['duration_days'],
+                'quantity' => $item['quantity'],
+                'duration_days' => $item['duration_days'],
                 'rental_date' => now(),
-                'return_date' => now()->addDays($data['duration_days']),
-                'subtotal_price' => $data['total_price'],
-                'total_price' => $data['total_price'],
+                'return_date' => now()->addDays($item['duration_days']),
+                'subtotal_price' => $item['subtotal'],
+                'total_price' => $item['subtotal'],
                 'status' => 'waiting_payment',
             ]);
 
-            $unit->decrement('stock_available', $data['quantity']);
+            // KURANGI STOK
+            $unit->decrement('stock_available', $item['quantity']);
 
-            // =========================
-            // 🔥 MANUAL
-            // =========================
-            if ($request->payment_method === 'manual') {
+            $rentals[] = $rental;
+        }
 
-                $amount = (int) $request->amount_paid;
+        // ambil rental pertama buat referensi pembayaran
+        $mainRental = $rentals[0];
 
-                if ($amount < $data['total_price']) {
-                    throw new \Exception('Uang kurang');
-                }
+        // =========================
+        // 🔥 MANUAL PAYMENT
+        // =========================
+        if ($request->payment_method === 'manual') {
 
-                Payment::create([
-                    'external_id' => 'rental_'.$rental->id.'_'.time(),
-                    'rental_id' => $rental->id,
-                    'payment_type' => 'rental',
-                    'method' => 'manual',
-                    'amount_paid' => $amount,
-                    'change_amount' => $amount - $data['total_price'],
-                    'status' => 'completed',
-                ]);
+            $amount = (int) $request->amount_paid;
+            $total = $data['total_price'];
 
-                $rental->update(['status' => 'rented']);
-
-                DB::commit();
-
-                return redirect()->route('petugas.rental.success', $rental->id);
+            if ($amount < $total) {
+                throw new \Exception('Uang kurang');
             }
 
-            // =========================
-            // 🔥 XENDIT
-            // =========================
+            Payment::create([
+                'external_id' => 'rental_'.$mainRental->id.'_'.time(),
+                'rental_id' => $mainRental->id,
+                'payment_type' => 'rental',
+                'method' => 'manual',
+                'amount_paid' => $amount,
+                'change_amount' => $amount - $total,
+                'status' => 'completed',
+            ]);
+
+            // update semua rental jadi rented
+            foreach ($rentals as $r) {
+                $r->update(['status' => 'rented']);
+            }
+
             DB::commit();
 
-            return redirect('/pay?amount='.$data['total_price']
-                .'&rental_id='.$rental->id
-                .'&type=rental');
+            session()->forget('rental_details');
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors($e->getMessage());
+            return redirect()->route('petugas.rental.success', $mainRental->id);
         }
+
+        // =========================
+        // 🔥 XENDIT PAYMENT
+        // =========================
+        DB::commit();
+
+        return redirect('/pay?amount='.$data['total_price']
+            .'&rental_id='.$mainRental->id
+            .'&type=rental');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->withErrors($e->getMessage());
     }
+}
 
     // =========================
     // 🔥 RETURN
