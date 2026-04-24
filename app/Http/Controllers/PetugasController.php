@@ -33,8 +33,8 @@ public function storeCustomer(Request $request)
         'name' => [
             'required',
             'string',
-            'min:3',
-            'max:100',
+            'min:1',
+            'max:50',
             'regex:/^[a-zA-Z\s]+$/'
         ],
 

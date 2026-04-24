@@ -105,8 +105,8 @@ document.getElementById("customerForm").addEventListener("submit", function(e){
     let phone = document.getElementById("phone").value.trim();
 
     // 🔥 Nama minimal 2 kata
-    if (name.split(" ").length < 2) {
-        alert("Nama harus minimal 2 kata");
+    if (name.split(" ").length < 1) {
+        alert("Nama harus minimal 1 kata");
         e.preventDefault();
         return;
     }
