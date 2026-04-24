@@ -1,0 +1,145 @@
+/* resources/css/app.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS from login.blade.php */
+
+/* Body Background - Lebih kompleks dan modern */
+body {
+    background: linear-gradient(
+        135deg,
+        #5b7fff 0%,
+        #3366ff 100%
+    ); /* Biru lebih hidup */
+    font-family: "Poppins", sans-serif; /* Terapkan font Poppins */
+    overflow: hidden; /* Sembunyikan scrollbar jika animasi keluar batas */
+    min-height: 100vh; /* Pastikan body mengisi seluruh viewport untuk centering */
+}
+
+/* Card Login - Penyesuaian Shadow dan Border */
+.login-card {
+    background-color: rgba(
+        255,
+        255,
+        255,
+        0.98
+    ); /* Hampir sepenuhnya opaque putih */
+    border-radius: 20px; /* Sudut lebih bulat */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25); /* Shadow lebih kuat dan menyebar */
+    backdrop-filter: blur(8px); /* Efek blur pada background di balik card */
+    -webkit-backdrop-filter: blur(8px); /* For Safari support */
+    border: 1px solid rgba(255, 255, 255, 0.4); /* Border halus yang lebih terlihat */
+    width: 100%; /* Lebar card */
+    max-width: 400px; /* Lebar maksimum card */
+    padding: 2.5rem; /* Padding lebih besar */
+    text-align: center; /* Teks di dalam card rata tengah */
+    position: relative; /* Penting untuk z-index di atas circles */
+    z-index: 10; /* Pastikan di atas circles (z-index circles adalah 0) */
+}
+
+/* Animated Circles */
+.animated-circle {
+    position: absolute;
+    background: rgba(
+        255,
+        255,
+        255,
+        0.15
+    ); /* Sedikit lebih opaque dari sebelumnya */
+    border-radius: 50%;
+    filter: blur(80px); /* Blur lebih kuat, lebih menyebar */
+    animation: float 20s ease-in-out infinite; /* Animasi lebih lambat dan halus */
+    z-index: 0; /* Pastikan di bawah card */
+    opacity: 0.9; /* Sedikit lebih solid */
+}
+
+.animated-circle:nth-child(1) {
+    width: 220px;
+    height: 220px;
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+}
+.animated-circle:nth-child(2) {
+    width: 280px;
+    height: 280px;
+    bottom: 10%;
+    right: 10%;
+    animation-delay: 5s;
+}
+.animated-circle:nth-child(3) {
+    width: 180px;
+    height: 180px;
+    top: 50%;
+    right: 0%; /* Geser ke kanan sedikit */
+    animation-delay: 10s;
+}
+.animated-circle:nth-child(4) {
+    width: 150px;
+    height: 150px;
+    bottom: 0%;
+    left: 20%; /* Geser ke kiri sedikit */
+    animation-delay: 15s;
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0) translateX(0) scale(1);
+    }
+    25% {
+        transform: translateY(-30px) translateX(20px) scale(1.03);
+    } /* Gerakan lebih jelas */
+    50% {
+        transform: translateY(30px) translateX(-20px) scale(0.97);
+    }
+    75% {
+        transform: translateY(-20px) translateX(30px) scale(1.02);
+    }
+}
+
+/* Input Field Styling */
+input[type="text"],
+input[type="password"] {
+    border: 1px solid #e5e7eb; /* Border abu-abu sangat terang */
+    border-radius: 8px; /* Sudut input lebih halus */
+    padding: 0.9rem 1rem; /* Padding input */
+    font-size: 1rem; /* Ukuran font input */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    outline: none; /* Hilangkan outline default */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Shadow ringan pada input */
+}
+input[type="text"]:focus,
+input[type="password"]:focus {
+    border-color: #3366ff; /* Biru terang saat fokus */
+    box-shadow: 0 0 0 4px rgba(51, 102, 255, 0.25); /* Ring shadow saat fokus, lebih tebal */
+}
+input::placeholder {
+    color: #9ca3af; /* Warna placeholder abu-abu */
+    opacity: 1; /* Pastikan placeholder tidak transparan */
+}
+
+/* Button Styling */
+.btn-login {
+    background: linear-gradient(
+        90deg,
+        #3366ff 0%,
+        #5b7fff 100%
+    ); /* Gradien pada tombol */
+    box-shadow: 0 12px 25px rgba(51, 102, 255, 0.4); /* Shadow tombol lebih jelas dan besar */
+    border-radius: 10px; /* Sudut tombol lebih membulat */
+    font-size: 1.25rem; /* Ukuran font tombol lebih besar */
+    padding: 0.8rem 1.5rem; /* Padding tombol */
+    font-weight: 600; /* Font lebih tebal */
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.btn-login:hover {
+    transform: translateY(-5px); /* Efek melayang saat hover lebih terasa */
+    box-shadow: 0 20px 40px rgba(51, 102, 255, 0.55); /* Shadow lebih besar saat hover */
+}
+.btn-login:active {
+    transform: translateY(0px); /* Kembali ke posisi semula saat diklik */
+    box-shadow: 0 8px 15px rgba(51, 102, 255, 0.25);
+}
