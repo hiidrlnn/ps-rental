@@ -9,9 +9,13 @@
 
     <div class="bg-gray-800 shadow-xl rounded-xl p-8 text-gray-100">
 
-        <h2 class="text-2xl font-bold mb-6 text-center">
+        <h2 class="text-2xl font-bold mb-2 text-center">
             Langkah 2: Pilih Unit PlayStation
         </h2>
+
+        <p class="mb-6 text-gray-400 text-center text-sm">
+            Maksimal 10 unit & 30 hari
+        </p>
 
         <p class="mb-6 text-gray-300 text-sm">
             Pelanggan:
@@ -87,7 +91,7 @@
                                     <button type="button"
                                         class="btn-plus bg-gray-600 px-2 rounded"
                                         data-type="qty"
-                                        data-max="{{ $unit->stock_available }}"
+                                        data-max="{{ min($unit->stock_available, 10) }}"
                                         data-index="{{ $loop->index }}">+</button>
 
                                 </div>
@@ -109,6 +113,7 @@
                                     <button type="button"
                                         class="btn-plus bg-gray-600 px-2 rounded"
                                         data-type="durasi"
+                                        data-max="30"
                                         data-index="{{ $loop->index }}">+</button>
 
                                 </div>
@@ -147,17 +152,15 @@
 
 <script>
 
-const radios = document.querySelectorAll('.unit-radio');
-
-// disable semua dulu
+// disable semua input dulu
 function resetInputs() {
     document.querySelectorAll('.qty-input, .durasi-input').forEach(i => i.disabled = true);
 }
 
 resetInputs();
 
-// aktifkan saat pilih
-radios.forEach((radio, i) => {
+// aktifkan sesuai radio
+document.querySelectorAll('.unit-radio').forEach((radio, i) => {
     radio.addEventListener('change', () => {
         resetInputs();
 
@@ -166,21 +169,19 @@ radios.forEach((radio, i) => {
     });
 });
 
-// ================= BUTTON LOGIC =================
-
+// ================= PLUS =================
 document.querySelectorAll('.btn-plus').forEach(btn => {
     btn.addEventListener('click', () => {
 
         let index = btn.dataset.index;
         let type = btn.dataset.type;
+        let max = parseInt(btn.dataset.max);
 
         if (type === 'qty') {
             let input = document.querySelectorAll('.qty-input')[index];
             let display = document.querySelectorAll('.qty-value')[index];
 
-            let max = parseInt(btn.dataset.max);
             let val = parseInt(input.value);
-
             if (val < max) val++;
 
             input.value = val;
@@ -192,7 +193,7 @@ document.querySelectorAll('.btn-plus').forEach(btn => {
             let display = document.querySelectorAll('.durasi-value')[index];
 
             let val = parseInt(input.value);
-            val++;
+            if (val < max) val++;
 
             input.value = val;
             display.innerText = val;
@@ -201,6 +202,7 @@ document.querySelectorAll('.btn-plus').forEach(btn => {
     });
 });
 
+// ================= MINUS =================
 document.querySelectorAll('.btn-minus').forEach(btn => {
     btn.addEventListener('click', () => {
 

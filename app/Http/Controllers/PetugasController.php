@@ -138,8 +138,8 @@ public function confirmRental(Request $request)
     // =========================
     $validated = $request->validate([
         'unit_id' => 'required|exists:units,id',
-        'quantity' => 'required|integer|min:1',
-        'duration_days' => 'required|integer|min:1',
+        'quantity' => 'required|integer|min:1|max:10',
+        'duration_days' => 'required|integer|min:1|max:30',
     ]);
 
     // =========================
