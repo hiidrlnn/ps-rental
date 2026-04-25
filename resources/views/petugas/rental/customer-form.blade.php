@@ -11,19 +11,32 @@
         Langkah 1: Data Pelanggan & Waktu Sewa
     </h2>
 
-    <form action="{{ route('petugas.rental.store-customer') }}" method="POST" id="customerForm">
+    {{-- 🔥 ERROR GLOBAL --}}
+    @if ($errors->any())
+        <div class="mb-6 bg-red-600 text-white p-4 rounded-lg">
+            <div class="font-semibold mb-2">
+                Oops! Ada beberapa masalah dengan input Anda:
+            </div>
+            <ul class="list-disc list-inside text-sm">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form action="{{ route('petugas.rental.store-customer') }}" method="POST">
         @csrf
 
         {{-- ================= NAMA ================= --}}
         <div class="mb-4">
             <label class="block text-sm font-semibold mb-2">Nama Pelanggan</label>
-            <input type="text" name="name" id="name"
+            <input type="text" name="name"
                 value="{{ old('name') }}"
                 required
-                minlength="3"
-                pattern="[A-Za-z\s]+"
                 placeholder="Contoh: Budi Santoso"
-                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded outline-none
+                @error('name') border-red-500 @enderror">
 
             @error('name')
                 <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -35,9 +48,9 @@
             <label class="block text-sm font-semibold mb-2">Alamat</label>
             <textarea name="address" rows="3"
                 required
-                minlength="5"
                 placeholder="Masukkan alamat lengkap"
-                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none">{{ old('address') }}</textarea>
+                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded outline-none
+                @error('address') border-red-500 @enderror">{{ old('address') }}</textarea>
 
             @error('address')
                 <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -47,12 +60,15 @@
         {{-- ================= TELEPON ================= --}}
         <div class="mb-4">
             <label class="block text-sm font-semibold mb-2">Nomor Telepon</label>
-            <input type="text" name="phone" id="phone"
+            <input type="tel"
+                id="phone"
+                name="phone"
                 value="{{ old('phone') }}"
+                inputmode="numeric"
+                placeholder="Contoh: 081234567890"
                 required
-                pattern="08[0-9]{8,11}"
-                placeholder="08xxxxxxxxxx"
-                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded outline-none
+                @error('phone') border-red-500 @enderror">
 
             @error('phone')
                 <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -62,11 +78,12 @@
         {{-- ================= EMAIL ================= --}}
         <div class="mb-4">
             <label class="block text-sm font-semibold mb-2">Email</label>
-            <input type="email" name="email"
+            <input type="text" name="email"
                 value="{{ old('email') }}"
                 required
                 placeholder="contoh@email.com"
-                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded outline-none
+                @error('email') border-red-500 @enderror">
 
             @error('email')
                 <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -79,7 +96,8 @@
             <input type="datetime-local" name="rental_datetime"
                 value="{{ old('rental_datetime', now()->format('Y-m-d\TH:i')) }}"
                 required
-                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded outline-none
+                @error('rental_datetime') border-red-500 @enderror">
 
             @error('rental_datetime')
                 <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -89,7 +107,7 @@
         {{-- ================= BUTTON ================= --}}
         <div class="flex justify-end">
             <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded font-semibold transition">
+                class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded font-semibold">
                 Lanjut ke Pilih Unit
             </button>
         </div>
@@ -97,35 +115,46 @@
     </form>
 </div>
 
-{{-- ================= JS VALIDASI TAMBAHAN ================= --}}
 <script>
-document.getElementById("customerForm").addEventListener("submit", function(e){
+const form = document.getElementById("customerForm");
+const phoneInput = document.getElementById("phone");
 
-    let name = document.getElementById("name").value.trim();
-    let phone = document.getElementById("phone").value.trim();
+// ================== FILTER ANGKA ==================
+phoneInput.addEventListener('input', function () {
+    this.value = this.value.replace(/[^0-9]/g, '');
+});
 
-    // 🔥 Nama minimal 2 kata
-    if (name.split(" ").length < 1) {
-        alert("Nama harus minimal 1 kata");
-        e.preventDefault();
-        return;
+// ================== AUTO SAVE ==================
+form.addEventListener("input", () => {
+    const data = {
+        name: form.name.value,
+        address: form.address.value,
+        phone: form.phone.value,
+        email: form.email.value,
+        rental_datetime: form.rental_datetime.value,
+    };
+
+    sessionStorage.setItem("customer_form", JSON.stringify(data));
+});
+
+// ================== FIX BACK BUTTON ==================
+window.addEventListener("pageshow", function () {
+
+    const data = JSON.parse(sessionStorage.getItem("customer_form"));
+
+    if (data) {
+        form.name.value = data.name || "";
+        form.address.value = data.address || "";
+        form.phone.value = data.phone || "";
+        form.email.value = data.email || "";
+        form.rental_datetime.value = data.rental_datetime || "";
     }
-    // Alamat Valid
-    if (str_word_count($validated['address']) < 3) {
-    return back()->withErrors([
-        'address' => 'Alamat terlalu singkat, isi lebih lengkap'
-    ])->withInput();
-}
 
-    // 🔥 Bersihin nomor (hapus spasi / simbol)
-    phone = phone.replace(/\D/g, '');
+});
 
-    if (!phone.startsWith("08")) {
-        alert("Nomor harus diawali 08");
-        e.preventDefault();
-        return;
-    }
-
+// ================== CLEAR SAAT SUBMIT ==================
+form.addEventListener("submit", () => {
+    sessionStorage.removeItem("customer_form");
 });
 </script>
 

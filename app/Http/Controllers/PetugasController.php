@@ -46,10 +46,10 @@ public function storeCustomer(Request $request)
             'regex:/^[a-zA-Z0-9\s,.-]+$/'
         ],
 
-        'phone' => [
-            'required',
-            'regex:/^08[0-9]{8,11}$/'
-        ],
+            'phone' => [
+                'required',
+                'regex:/^08\d{9,11}$/',
+            ],
 
         'email' => [
             'required',
@@ -69,12 +69,14 @@ public function storeCustomer(Request $request)
         'name.required' => 'Nama wajib diisi',
         'name.regex' => 'Nama hanya boleh huruf',
         'name.min' => 'Nama minimal 3 karakter',
+        'name.max' => 'Nama maksimal 50 karakter',
 
         'address.required' => 'Alamat wajib diisi',
         'address.min' => 'Alamat terlalu pendek',
 
         'phone.required' => 'Nomor wajib diisi',
         'phone.regex' => 'Nomor harus format Indonesia (08xxxx)',
+        'phone.regex' => 'Nomor harus di awali 08 dan Panjang karakter minimal 11 sampai 13 karakter',
 
         'email.required' => 'Email wajib diisi',
         'email.email' => 'Format email tidak valid',

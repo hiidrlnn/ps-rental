@@ -143,10 +143,8 @@
 
             <div class="flex justify-between mt-6">
 
-                <a href="{{ route('petugas.rental.form') }}"
-                    class="bg-gray-600 hover:bg-gray-700 px-5 py-2 rounded text-sm">
-                    Kembali
-                </a>
+                <button type="button" onclick="history.back()" class="bg-gray-600 hover:bg-gray-700 px-5 py-2 rounded text-sm">
+                Kembali</button>
 
                 <button type="submit"
                     class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded font-semibold">
